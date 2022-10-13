@@ -1,0 +1,34 @@
+{
+  "name": "@parrotjs/classnames",
+  "version": "2.0.2",
+  "description": "",
+  "main": "dist/parrotclassnames.cjs.js",
+  "module": "dist/parrotclassnames.esm.js",
+  "umd": "dist/parrotclassnames.umd.js",
+  "umdName": "ParrotClassname",
+  "types": "dist/types",
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "rollup -c",
+    "prepub": "npm run build",
+    "pub": "sh release.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/parrot-design/parrot-mini-axios.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/parrot-design/parrot-mini-axios/issues"
+  },
+  "homepage": "https://github.com/parrot-design/parrot-mini-axios#readme",
+  "devDependencies": {
+    "husky": "^7.0.1",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.53.2",
+    "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-typescript2": "^0.30.0",
+    "typescript": "^4.3.5"
+  }
+}
