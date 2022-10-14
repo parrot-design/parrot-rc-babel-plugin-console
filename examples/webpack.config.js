@@ -17,13 +17,7 @@ module.exports={
      * 给每个文件添加一个webpack-hot-middleware/client热更新文件
      */
     entry:{
-        'simple':['webpack-hot-middleware/client',path.join(__dirname,'simple/app.ts')],
-        'base':['webpack-hot-middleware/client',path.join(__dirname,'base/app.ts')],
-        'error':['webpack-hot-middleware/client',path.join(__dirname,'error/app.ts')],
-        'extends':['webpack-hot-middleware/client',path.join(__dirname,'extends/app.ts')],
-        'interceptors':['webpack-hot-middleware/client',path.join(__dirname,'interceptors/app.ts')],
-        'config':['webpack-hot-middleware/client',path.join(__dirname,'config/app.ts')],
-        'more':['webpack-hot-middleware/client',path.join(__dirname,'more/app.ts')],
+        'base':['webpack-hot-middleware/client',path.join(__dirname,'base/app.tsx')], 
     },
     // entry:fs.readFileSync(__dirname).reduce((entries,dir)=>{
 
@@ -57,11 +51,30 @@ module.exports={
                 test:/\.tsx?$/,
                 use:[
                     {
+                        loader:'babel-loader', 
+                    },
+                    {
                         loader:'ts-loader',
                         options:{
                             transpileOnly:true
                         }
-                    }
+                    },
+                   
+                ]
+            },
+            {
+                test:/\.css$/,
+                use:[
+                    {loader:'style-loader'},
+                    {loader:'css-loader'}
+                ]
+            }, 
+            {
+                test:/\.scss$/,
+                use:[
+                    {loader:'style-loader'},
+                    {loader:'css-loader'},
+                    {loader:'sass-loader'}
                 ]
             }
         ]
