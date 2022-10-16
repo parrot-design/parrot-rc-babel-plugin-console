@@ -1,7 +1,10 @@
 {
    "env":{
     "development":{
-        "plugins":["../dist/parrotbabelpluginconsole.cjs"]
+        "plugins":[["../dist/index.cjs",{
+            "env":"production",
+            "commentWords":["保留"]
+        }]]
     }
    }
 }

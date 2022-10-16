@@ -2,9 +2,9 @@
   "name": "@parrotjs/babel-plugin-console",
   "version": "0.0.1",
   "description": "",
-  "main": "dist/parrotbabelpluginconsole.cjs.js",
-  "module": "dist/parrotbabelpluginconsole.esm.js",
-  "umd": "dist/parrotbabelpluginconsole.umd.js",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.esm.js",
+  "umd": "dist/index.umd.js",
   "umdName": "ParrotBabelPluginConsole",
   "types": "dist/types",
   "scripts": {

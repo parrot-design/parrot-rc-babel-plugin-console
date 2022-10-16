@@ -90,9 +90,11 @@ const visitor = {
   },
 };
 
-export default () => {
+var index = () => {
   return {
     name: "@parrotjs/babel-plugin-console",
     visitor,
   };
 };
+
+export { index as default };

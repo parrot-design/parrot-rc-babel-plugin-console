@@ -1,3 +1,5 @@
+'use strict';
+
 // @ts-ignore
 const isArray = (arg) =>
   Object.prototype.toString.call(arg) === "[object Array]";
@@ -90,9 +92,11 @@ const visitor = {
   },
 };
 
-export default () => {
+var index = () => {
   return {
     name: "@parrotjs/babel-plugin-console",
     visitor,
   };
 };
+
+module.exports = index;
