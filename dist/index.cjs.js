@@ -58,6 +58,7 @@ const removeConsoleExpression = (path, calleePath, exclude, commentWords) => {
       }
     });
   }
+  console.log("===trailReserve==>",leadingReserve,trailReserve);
   if (!leadingReserve && !trailReserve) {
     path.remove();
   }

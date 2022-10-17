@@ -2,8 +2,7 @@
    "env":{
     "development":{
         "plugins":[["../dist/index.cjs",{
-            "env":"production",
-            "commentWords":["保留"]
+            "env":"production"
         }]]
     }
    }

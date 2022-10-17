@@ -55,7 +55,7 @@ const removeConsoleExpression = (path, calleePath, exclude, commentWords) => {
         trailReserve = true;
       }
     });
-  }
+  } 
   if (!leadingReserve && !trailReserve) {
     path.remove();
   }
