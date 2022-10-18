@@ -351,3 +351,22 @@ if (hasLeadingComments(parentNode)) {
 
 # 发布到线上
 
+我现已将代码发布到线上
+
+## 安装
+
+```js
+yarn add @parrotjs/babel-plugin-console
+```
+
+## 使用
+
+举个例子：新建.babelrc
+
+```js
+{
+    "plugins":[["../dist/index.cjs",{
+        "env":"production"
+    }]]
+}
+```

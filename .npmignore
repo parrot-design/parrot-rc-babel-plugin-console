@@ -8,3 +8,7 @@ tsconfig.json
 tsconfig.d.json
 /public
 /examples
+/assets
+JUEJIN.md
+README.md
+release.sh
