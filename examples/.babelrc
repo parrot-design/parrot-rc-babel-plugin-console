@@ -1,9 +1,19 @@
+// {
+//    "env":{
+//     "development":{
+//         "plugins":[["../dist/index.cjs",{
+//             "env":"production"
+//         }]]
+//     },
+//     "production":{
+//         // "plugins":[["../dist/index.cjs",{
+//         //     "env":"production"
+//         // }]]
+//     }
+//    }
+// }
 {
-   "env":{
-    "development":{
-        "plugins":[["../dist/index.cjs",{
-            "env":"production"
-        }]]
-    }
-   }
+    "plugins":[["../dist/index.cjs",{
+        "env":"production"
+    }]]
 }

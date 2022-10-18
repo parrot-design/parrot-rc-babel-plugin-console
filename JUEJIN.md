@@ -13,7 +13,7 @@
 我们的目的是去除console.log，我们首先需要通过[ast](https://www.astexplorer.net/)查看语法树的结构。我们以下面的console为例：
 
 
-> 注意 因为我们要写babel插件 所以我们选择@babel/parser库生成ast
+> 注意 因为我们要写babel插件 所以我们选择@babel/parser库生成ast，因为babel内部是使用这个库生成ast的
 
 ```js
 console.log("我会被清除"); 
@@ -85,6 +85,18 @@ Identifier有一个属性name 表示标识符的名字
 
 StringLiteral有一个属性value 表示字符串的值
 
+## 公共属性
+
+> 每种 AST 都有自己的属性，但是它们也有一些公共的属性：
+
+* type：AST节点的类型
+
+* start、end、loc：start和end代表该节点在源码中的开始和结束下标。而loc属性是一个对象，有line和column属性分别记录开始和结束的行列号
+
+* leadingComments、innerComments、trailingComments：表示开始的注释、中间的注释、结尾的注释，每个 AST 节点中都可能存在注释，而且可能在开始、中间、结束这三种位置，想拿到某个 AST 的注释就通过这三个属性。
+
+
+
 # 如何写一个babel插件？
 
 babel插件是作用在第二阶段即transform阶段。
@@ -109,7 +121,7 @@ transform阶段有@babel/traverse，可以遍历AST，并调用visitor函数修�
 ```diff
 + const visitor = { 
 +   CallExpression(path, { opts }) {
-+    //当traverse遍历到类型为CallExpression的AST时，会进入函数，我们需要在函数内部修改
++    //当traverse遍历到类型为CallExpression的AST时，会进入函数内部，我们需要在函数内部修改
 +  }
 + };
 ```
@@ -122,10 +134,220 @@ transform阶段有@babel/traverse，可以遍历AST，并调用visitor函数修�
 
 > path.get 表示获取某个属性的path 
 
+> path.matchesPattern 检查某个节点是否符合某种模式
+
+> path.remove 删除当前节点
+
 ```diff
 CallExpression(path, { opts }) {
 +  //获取callee的path
 +  const calleePath = path.get("callee"); 
-  
++  //检查callee中是否符合“console”这种模式
++  if (calleePath && calleePath.matchesPattern("console", true)) {
++       //如果符合 直接删除节点  
++       path.remove();
++  }
 },
 ```
+
+# 增加env api
+
+一般去除console.log都是在生产环境执行 所以增加env参数
+
+> AST的第二个参数opt中有插件传入的配置
+
+```diff
++  const isProduction = process.env.NODE_ENV === "production";
+CallExpression(path, { opts }) {
+....
++  const { env } = opts;
++  if (env === "production" || isProduction) {
+       path.remove();
++  }
+....
+},
+```
+
+# 增加exclude api
+
+我们上面去除了所有的console，不管是error、warning、table都会清除，所以我们加一个exclude api，传一个数组，可以去除想要去除的console类型
+
+```diff
+....
++ const isArray = (arg) => Object.prototype.toString.call(arg) === "[object Array]";
+- const { env } = opts;
++ const { env,exclude } = opts;
+if (env === "production" || isProduction) {
+- path.remove();  
++ //封装函数进行操作
++ removeConsoleExpression(path, calleePath, exclude);
+}
+
++const removeConsoleExpression=(path, calleePath, exclude)=>{
++  if (isArray(exclude)) { 
++    const hasTarget = exclude.some((type) => {
++      return calleePath.matchesPattern("console." + type);
++    });
++    //匹配上直接返回不进行操作
++    if (hasTarget) return;
++  }
++  path.remove();
++}
+```
+
+# 增加commentWords api
+
+某些时候 我们希望一些console 不被删除 我们可以给他添加一些注释 比如 
+
+```js
+//no remove
+console.log("测试1");
+console.log("测试2");//reserse
+//hhhhh
+console.log("测试3")
+```
+
+如上 我们希望带有no remove前缀注释的console 和带有reserse后缀注释的console保留不被删除
+
+之前我们提到 babel给我们提供了leadingComments（前缀注释）和trailingComments（后缀注释）我们可以利用他们 由AST可知 她和CallExpression同级，所以我们需要获取他的父节点 然后获取父节点的属性
+
+> path.parentPath 获取父path
+
+> path.node 获取当前节点
+
+```diff
+- const { exclude, env } = opts;
++ const { exclude, commentWords, env } = opts;
++ const isFunction = (arg) =>Object.prototype.toString.call(arg) === "[object Function]";
++ // 判断是否有前缀注释 
++ const hasLeadingComments = (node) => {
++  const leadingComments = node.leadingComments;
++  return leadingComments && leadingComments.length;
++ };
++ // 判断是否有后缀注释 
++ const hasTrailingComments = (node) => {
++  const trailingComments = node.trailingComments;
++  return trailingComments && trailingComments.length;
++ };
++ //判断是否有关键字匹配 默认no remove || reserve 且如果commentWords和默认值是相斥的
++ const isReserveComment = (node, commentWords) => {
++ if (isFunction(commentWords)) {
++   return commentWords(node.value);
++ }
++ return (
++    ["CommentBlock", "CommentLine"].includes(node.type) &&
++    (isArray(commentWords)
++      ? commentWords.includes(node.value)
++      : /(no[t]? remove\b)|(reserve\b)/.test(node.value))
++  );
++};
+- const removeConsoleExpression = (path, calleePath, exclude) => {
++ const removeConsoleExpression = (path, calleePath, exclude,commentWords) => {
++ //获取父path
++ const parentPath = path.parentPath;
++ const parentNode = parentPath.node;
++ //标识是否有前缀注释
++ let leadingReserve = false;
++ //标识是否有后缀注释
++ let trailReserve = false;
++ if (hasLeadingComments(parentNode)) {
++    //traverse 
++    parentNode.leadingComments.forEach((comment) => {
++      if (isReserveComment(comment, commentWords)) {
++        leadingReserve = true;
++      }
++    });
++  }
++ if (hasTrailingComments(parentNode)) {
+    //traverse 
++   parentNode.trailingComments.forEach((comment) => {
++     if (isReserveComment(comment, commentWords)) {
++       trailReserve = true;
++     }
++   });
++ } 
++ //如果没有前缀节点和后缀节点 直接删除节点
++ if (!leadingReserve && !trailReserve) {
++    path.remove();
++  }
+} 
+```
+
+# 细节完善
+
+我们大致完成了插件 我们引进项目里面进行测试 
+
+```js
+console.log("测试1");
+//no remove
+console.log("测试2"); 
+console.log("测试3");//reserve
+console.log("测试4");
+
+
+//新建.babelrc 引入插件
+{
+    "plugins":[["../dist/index.cjs",{
+        "env":"production"
+    }]]
+}
+```
+
+理论上应该移除测试1、测试4，但是我们惊讶的发现 竟然一个console没有删除！！经过排查 我们大致确定了问题所在
+
+> 因为测试2的前缀注释同时也被AST纳入了测试1的后缀注释中了，而测试3的后缀注释同时也被AST纳入了测试4的前缀注释中了
+
+所以测试1存在后缀注释 测试4存在前缀注释 所以测试1和测试4没有被删除
+
+那么我们怎么判断呢？
+
+## 对于后缀注释
+
+我们可以判断后缀注释是否与当前的调用表达式处于同一行，如果不是同一行，则不将其归纳为后缀注释
+
+```diff
+ if (hasTrailingComments(parentNode)) {
+
++    const { start:{ line: currentLine } }=parentNode.loc;
+    //traverse
+    // @ts-ignore
+    parentNode.trailingComments.forEach((comment) => { 
+
++      const { start:{ line: currentCommentLine } }=comment.loc;
+
++      if(currentLine===currentCommentLine){
++        comment.belongCurrentLine=true;
++      }
++     //属于当前行才将其设置为后缀注释
+-      if (isReserveComment(comment, commentWords))
++      if (isReserveComment(comment, commentWords) && comment.belongCurrentLine) {
+        trailReserve = true;
+      }
+    });
+  } 
+```
+
+我们修改完进行测试 发现测试1 已经被删除
+
+## 对于前缀注释
+
+那么对于前缀注释 我们应该怎么做呢 因为我们在后缀注释的节点中添加了一个变量belongCurrentLine，表示该注释是否是和节点属于同一行。
+
+那么对于前缀注释，我们只需要判断是否存在belongCurrentLine，如果存在belongCurrentLine，表示不能将其当作前缀注释。
+
+```diff
+if (hasLeadingComments(parentNode)) {
+    //traverse
+    // @ts-ignore
+    parentNode.leadingComments.forEach((comment) => {
+-      if (isReserveComment(comment, commentWords)) {
++      if (isReserveComment(comment, commentWords) && !comment.belongCurrentLine) {
+        leadingReserve = true;
+      }
+    });
+  }
+
+```
+
+# 发布到线上
+

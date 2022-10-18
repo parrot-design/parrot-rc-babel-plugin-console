@@ -41,17 +41,26 @@ const removeConsoleExpression = (path, calleePath, exclude, commentWords) => {
     //traverse
     // @ts-ignore
     parentNode.leadingComments.forEach((comment) => {
-      if (isReserveComment(comment, commentWords)) {
+      if (isReserveComment(comment, commentWords) && !comment.belongCurrentLine) {
         leadingReserve = true;
       }
     });
   }
 
   if (hasTrailingComments(parentNode)) {
+
+    const { start:{ line: currentLine } }=parentNode.loc;
     //traverse
     // @ts-ignore
-    parentNode.trailingComments.forEach((comment) => {
-      if (isReserveComment(comment, commentWords)) {
+    parentNode.trailingComments.forEach((comment) => { 
+
+      const { start:{ line: currentCommentLine } }=comment.loc;
+
+      if(currentLine===currentCommentLine){
+        comment.belongCurrentLine=true;
+      }
+
+      if (isReserveComment(comment, commentWords) && comment.belongCurrentLine) {
         trailReserve = true;
       }
     });
@@ -82,7 +91,7 @@ const visitor = {
 
     const { exclude, commentWords, env } = opts;
 
-    if (calleePath && calleePath.matchesPattern("console", true)) {
+    if (calleePath && calleePath.matchesPattern("console", true)) { 
       if (env === "production" || isProduction) {
         removeConsoleExpression(path, calleePath, exclude, commentWords);
       }
