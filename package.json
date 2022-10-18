@@ -1,6 +1,6 @@
 {
   "name": "@parrotjs/babel-plugin-console",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
@@ -41,6 +41,5 @@
     "webpack-dev-middleware": "^5.0.0",
     "webpack-hot-middleware": "^2.25.0"
   },
-  "dependencies": { 
-  }
+  "dependencies": {}
 }
